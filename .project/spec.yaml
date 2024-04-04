@@ -44,6 +44,8 @@ environment:
         -o /dev/null -s -w ''%{http_code}'' --config -) == ''200'' ]'
       stop_command: jupyter lab stop 8888
       user_msg: ""
+      logfile_path: ""
+      timeout_seconds: 0
       icon_url: ""
       webapp_options:
         autolaunch: true
@@ -84,7 +86,53 @@ environment:
       name: ""
       target: ""
 execution:
-  apps: []
+  apps:
+  - name: blocking-process
+    type: custom
+    class: process
+    start_command: /project/process.sh
+    health_check_command: pgrep -rSR process.sh
+    stop_command: pkill process.sh
+    user_msg: ""
+    logfile_path: /tmp/process.log
+    timeout_seconds: 0
+    icon_url: ""
+  - name: non-blocking-process
+    type: custom
+    class: process
+    start_command: daemonize -c /project -o /tmp/daemon.log -l /tmp/daemon.lock /project/daemon.sh
+    health_check_command: pgrep -rSR daemon.sh
+    stop_command: pkill daemon.sh
+    user_msg: ""
+    logfile_path: /tmp/daemon.log
+    timeout_seconds: 0
+    icon_url: ""
+  - name: blocking-webapp
+    type: custom
+    class: webapp
+    start_command: python3 -m http.server 8888
+    health_check_command: pgrep python3
+    stop_command: pkill python3
+    user_msg: ""
+    logfile_path: ""
+    timeout_seconds: 0
+    icon_url: ""
+    webapp_options:
+      autolaunch: true
+      port: "8888"
+      proxy:
+        trim_prefix: true
+      url: http://localhost:8888/
+  - name: bad
+    type: custom
+    class: process
+    start_command: /project/process.sh
+    health_check_command: "false"
+    stop_command: "true"
+    user_msg: ""
+    logfile_path: ""
+    timeout_seconds: 0
+    icon_url: ""
   resources:
     gpu:
       requested: 0
